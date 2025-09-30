@@ -1,7 +1,8 @@
 export type ApiResponse<T = any> = {
   status: boolean;
   message: string;
-  response: T | null;
+  data?: T | null;
+  error?:any
 };
 
 export const generateResponse = <T>(
@@ -11,5 +12,5 @@ export const generateResponse = <T>(
 ): ApiResponse<T> => ({
   status,
   message,
-  response: data,
+  [status ? 'data' : 'error']: data,
 });

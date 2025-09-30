@@ -1,5 +1,5 @@
 import { generateResponse } from "../helpers/response";
-import { askGemma } from "../services/ai.service";
+import { askGemma, getAvailableModels } from "../services/ai.service";
 
 export const getChatResponseFromModel = async (req: any, res: any) => {
     try {
@@ -10,9 +10,21 @@ export const getChatResponseFromModel = async (req: any, res: any) => {
         askGemma(message).then((response) => {
             res.status(200).send(generateResponse<string>('Response from AI model', true, response));
         }).catch((err) => {
-            res.status(200).send(generateResponse<string>('Error in fetching data from model',));
+            res.status(400).send(generateResponse<string>('Error in fetching data from model', false, err.message));
         });
     } catch (error) {
         res.status(500).send(generateResponse<null>('Error in getChatResponseFromModel!'));
+    }
+}
+
+export const getAvailableModelsWithDetails = async (req: any, res: any) => {
+    try {
+        getAvailableModels().then((response) => {
+            res.status(200).send(generateResponse<string>('Models fetched successfully!', true, response));
+        }).catch((err) => {
+            res.status(400).send(generateResponse<string>('Error in fetching model details', false, err.message));
+        });
+    } catch (error) {
+        res.status(500).send(generateResponse<null>('Error in getAvailableModelsWithDetails!'));
     }
 }

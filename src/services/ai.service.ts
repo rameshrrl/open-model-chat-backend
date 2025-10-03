@@ -1,6 +1,7 @@
 import ollama from 'ollama';
+import { generateResponse } from '../helpers/response';
 
-export async function askGemma(prompt: string): Promise<string> {
+export async function getResponseFromModel(prompt: string): Promise<string> {
   try {
     const response = await ollama.chat({
       model: 'gemma3:4b',
@@ -30,3 +31,51 @@ export async function getAvailableModels(): Promise<any> {
     return [`Error: ${error.message}`];
   }
 }
+
+export const getResponseFromModelUsingStream = async (req: any, res: any) => {
+  try {
+    const messagesRaw = req.query.messages as string | undefined;
+    const model = (req.query.model as string) || 'gemma3:4b';
+    if (!messagesRaw) {
+      return res.status(400).send(generateResponse<null>('Messages are required!'));
+    }
+
+    let parsedMessages;
+    try {
+      parsedMessages = JSON.parse(messagesRaw);
+    } catch (err) {
+      return res.status(400).send(generateResponse<null>('Invalid messages format!'));
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const stream = await ollama.chat({
+      model,
+      messages: parsedMessages,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const token = chunk.message?.content || '';
+      if (token) {
+        res.write(`data: ${JSON.stringify({ token })}\n\n`);
+      }
+    }
+
+    res.write("data: [DONE]\n\n");
+    res.end();
+
+  } catch (error: any) {
+    if (!res.headersSent) {
+      res.status(500).send(generateResponse<null>('Error in getResponseFromModelUsingStream!'));
+    } else {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.write("data: [DONE]\n\n");
+      res.end();
+    }
+  }
+};
+

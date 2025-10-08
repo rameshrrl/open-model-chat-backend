@@ -34,17 +34,11 @@ export async function getAvailableModels(): Promise<any> {
 
 export const getResponseFromModelUsingStream = async (req: any, res: any) => {
   try {
-    const messagesRaw = req.query.messages as string | undefined;
-    const model = (req.query.model as string) || 'gemma3:4b';
+    const messagesRaw = req.body.messages;
+    const model = (req.body.model as string) || 'gemma3:4b';
+
     if (!messagesRaw) {
       return res.status(400).send(generateResponse<null>('Messages are required!'));
-    }
-
-    let parsedMessages;
-    try {
-      parsedMessages = JSON.parse(messagesRaw);
-    } catch (err) {
-      return res.status(400).send(generateResponse<null>('Invalid messages format!'));
     }
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -54,7 +48,7 @@ export const getResponseFromModelUsingStream = async (req: any, res: any) => {
 
     const stream = await ollama.chat({
       model,
-      messages: parsedMessages,
+      messages: messagesRaw,
       stream: true,
     });
 

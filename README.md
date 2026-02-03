@@ -1,6 +1,6 @@
-# OPEN MODEL CHAT
+# Open Model Chat
 
-Open Model Chat Backend is a TypeScript + Express service that wraps local Ollama models and exposes JSON + streaming endpoints for chat and vision use cases.
+Open Model Chat Backend is a TypeScript + Express service that wraps local Ollama models and exposes JSON + streaming endpoints for chat and vision use cases. A frontend application [Open Model Frontend](https://github.com/rameshrrl/open-model-chat-frontend) was developed to utilise this application's capabilities.
 
 ## Features
 - Chat with a local Ollama model.

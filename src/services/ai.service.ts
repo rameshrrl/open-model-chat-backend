@@ -1,5 +1,6 @@
 import ollama from 'ollama';
 import { generateResponse } from '../helpers/response';
+import fs from 'fs/promises';
 
 export async function getResponseFromModel(prompt: string): Promise<string> {
   try {
@@ -73,3 +74,53 @@ export const getResponseFromModelUsingStream = async (req: any, res: any) => {
   }
 };
 
+export const getVisionResponseFromModelUsingStream = async (req: any, res: any) => {
+  try {
+    const model = (req.body?.model as string) || 'gemma3:4b';
+    const rawPrompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    const prompt = rawPrompt.length > 0 ? rawPrompt : 'Describe the image.';
+    const imageFile = req.file;
+
+    if (!imageFile?.path) {
+      return res.status(400).send(generateResponse<null>('Image file is required!'));
+    }
+
+    const imageBytes = await fs.readFile(imageFile.path);
+    const imageBase64 = imageBytes.toString('base64');
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const stream = await ollama.chat({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+          images: [imageBase64],
+        },
+      ],
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const token = chunk.message?.content || '';
+      if (token) {
+        res.write(`data: ${JSON.stringify({ token })}\n\n`);
+      }
+    }
+
+    res.write("data: [DONE]\n\n");
+    res.end();
+  } catch (error: any) {
+    if (!res.headersSent) {
+      res.status(500).send(generateResponse<null>('Error in getVisionResponseFromModelUsingStream!'));
+    } else {
+      res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+      res.write("data: [DONE]\n\n");
+      res.end();
+    }
+  }
+};

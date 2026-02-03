@@ -1,5 +1,5 @@
 import { generateResponse } from "../helpers/response";
-import { getResponseFromModel, getAvailableModels, getResponseFromModelUsingStream } from "../services/ai.service";
+import { getResponseFromModel, getAvailableModels, getResponseFromModelUsingStream, getVisionResponseFromModelUsingStream as getVisionResponseFromModelUsingStreamService } from "../services/ai.service";
 
 export const getChatResponseFromModel = async (req: any, res: any) => {
     try {
@@ -34,5 +34,13 @@ export async function getChatResponseFromModelUsingStream(req: any, res: any) {
         return await getResponseFromModelUsingStream(req, res);
     } catch (error) {
         return res.status(500).send(generateResponse<null>('Error in getChatResponseFromModelUsingStream!'));
+    }
+}
+
+export async function getVisionResponseFromModelUsingStream(req: any, res: any) {
+    try {
+        return await getVisionResponseFromModelUsingStreamService(req, res);
+    } catch (error) {
+        return res.status(500).send(generateResponse<null>('Error in getVisionResponseFromModelUsingStream!'));
     }
 }
